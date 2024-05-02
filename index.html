@@ -20,7 +20,7 @@
     <div class="form-group">
         <label for="numSemesters">Enter number of semesters:</label>
         <input type="number" id="numSemesters" class="form-control" min="1" value="1">
-        <button onclick="initializeSemesters()" class="btn btn-primary mt-2" id="noofsem">Next</button>
+        <button onclick="initializeSemesters()" class="btn btn-primary mt-2">Next</button>
     </div>
 </div>
 
@@ -54,8 +54,6 @@ var numSemesters;
 var semesterData = {};
 
 function initializeSemesters() {
-    document.getElementById('noofsem').disabled = true;
-    document.getElementById('numSemesters').disabled = true;
     numSemesters = parseInt(document.getElementById('numSemesters').value);
     var semesterForms = document.getElementById('semesterForms');
     semesterForms.style.display = 'block';
@@ -98,38 +96,53 @@ function calculateCGPA() {
     var totalCGPAResult = document.getElementById('totalCGPAResult');
     cgpaResultBody.innerHTML = '';
     totalCGPAResult.innerHTML = '';
-    
+
     for (var i = 1; i <= numSemesters; i++) {
         var semester = i;
         var totalCreditHours = 0;
         var totalWx = 0;
         var tableRows = document.querySelectorAll(`#semester${semester}TableContainer input[type='number']`);
-        
+
+        if (tableRows.length === 0) {
+            continue; // Skip if there are no table rows
+        }
+
         tableRows.forEach(function(row) {
-            var creditHours = parseFloat(row.parentElement.previousElementSibling.querySelector('.credit-hours').value) || 0;
+            var creditHoursInput = row.parentElement.previousElementSibling.querySelector('.credit-hours');
+            if (!creditHoursInput) return; // Skip if credit hours input is not found
+            var creditHours = parseFloat(creditHoursInput.value) || 0;
             var gpa = parseFloat(row.value) || 0;
             totalCreditHours += creditHours;
             totalWx += creditHours * gpa;
         });
-        
+
         var gpa = totalWx / totalCreditHours;
         cgpaResultBody.innerHTML += `
         <tr>
-            <td>${semester}</td>
+            <td>Semester ${semester}</td>
             <td>${totalCreditHours.toFixed(2)}</td>
             <td>${totalWx.toFixed(2)}</td>
             <td>${gpa.toFixed(2)}</td>
         </tr>`;
     }
-    
-    var totalCreditHoursSum = Array.from(document.querySelectorAll('.table tbody td:nth-child(2)')).reduce((acc, curr) => acc + parseFloat(curr.textContent), 0);
-    var totalWxSum = Array.from(document.querySelectorAll('.table tbody td:nth-child(3)')).reduce((acc, curr) => acc + parseFloat(curr.textContent), 0);
-    var cgpa = totalWxSum / totalCreditHoursSum;
-    totalCGPAResult.innerHTML = `
-    <div class="mt-4">
-        <strong>Total CGPA:</strong> ${cgpa.toFixed(2)}
-    </div>`;
+
+    var totalCreditHoursSum = 0;
+    var totalWxSum = 0;
+    for (var j = 1; j <= numSemesters; j++) {
+        var semesterData = semesterData[j];
+        if (semesterData) {
+            totalCreditHoursSum += semesterData.totalCreditHours;
+            totalWxSum += semesterData.totalWx;
+        }
+    }
+
+    if (totalCreditHoursSum !== 0) {
+        var cgpa = totalWxSum / totalCreditHoursSum;
+        totalCGPAResult.innerHTML = `<h4 class="mt-4">Total CGPA: ${cgpa.toFixed(2)}</h4>`;
+    }
 }
+
+
 </script>
 
 </body>
